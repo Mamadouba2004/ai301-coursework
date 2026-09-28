@@ -1,0 +1,18 @@
+# Rubric: is this a good first issue?
+
+## Checks
+
+| Check | Evidence | Pass condition | Weight |
+|---|---|---|---|
+| Maintainer alive | The last 5 default-branch commits (repo-facts block; live mode: the repo's front page commit list) | At least one of the last 5 commits is dated within 180 days of the bundle's capture date (or today, in live mode) AND is either human-authored (not a `[bot]` account) or a bot-authored merge commit whose message names a human contributor's branch/PR (e.g. "Merge pull request #N from human/branch") | required |
+| Repo in use | The `archived:` flag, latest release date, and last push to any branch (repo-facts block; live mode: the archived banner, the Releases box, and the front-page commit date) | Not archived, AND (last push to any branch is within 180 days of the capture date/today, OR the latest release is within 365 days of it) | required |
+| Scope fits a newcomer | The issue title, body, and full comment thread | Fails if the issue is a self-described umbrella/tracking issue listing multiple unrelated sub-tasks meant to be split up, a pure usage/support question ("how do I get this to work?"), or the thread shows the design or spec is still unsettled with no maintainer decision (an open product question, a multi-year debate with no resolution, or a maintainer stating the fix needs core/architectural changes). Passes otherwise, including terse bug reports and small docs fixes, as long as the ask is one bounded, well-defined change | required |
+| Nobody already on it | The `this issue: assignees` and `linked PRs` fields (repo-facts block; live mode: the Assignees box and Development box, cross-checked against the comment thread) | Fails if an assignee is set, or any linked PR is open. A closed or merged linked PR, or a claim comment older than 180 days that never produced a PR, does not block the issue. (Path Review house rule in scope.md overrides claim comments in live mode only — it never overrides an assignee or an open linked PR.) | required |
+| Contribution workflow allowed | The contribution-policy line (repo-facts block; live mode: `CONTRIBUTING.md`, `AI_POLICY.md`/`AI_USAGE_POLICY.md`, and issue/PR templates) | Fails only on an outright, unconditional ban on AI-generated code or documentation. Disclosure requirements, "you must personally understand and test your changes," human-review requirements, an `AGENTS.md` file, or no stated policy at all all pass | required |
+| Good-first-issue signal | Issue labels | The issue carries a `good first issue` label or a clear equivalent (e.g. `help wanted` plus `easy`/`beginner-friendly`) | preferred |
+
+## Verdict rule
+
+Accept the issue only if all five **required** checks grade `pass`. If any required check grades `fail`, the verdict is `reject`. Treat `unclear` as `fail` on every required check: a first issue whose liveness, scope, claim status, or contribution policy cannot actually be verified from the available evidence is not one to hand a newcomer, no matter how the other checks graded.
+
+The **preferred** check (good-first-issue signal) never changes the verdict. Report its grade, and use it only to help rank issues this rubric has already accepted, alongside the fit profile in `scope.md` (live mode only).
