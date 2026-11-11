@@ -20,13 +20,13 @@ Every story section below ends with a Toolkit block. The four dated entries come
 
 I built issue-scout, which searches all of GitHub with my written queries, ranks the results cheaply, and grades the top candidates against my rubric. My first scan accepted all five candidates, but four of them were repos created 0 to 2 days earlier with 0 to 1 stars where only the owner had committed (riskline, trainleak, fleet-sim, dense-melee-lab). They passed "Maintainer alive" and "Repo in use" exactly as written, so the rubric could not tell a showcase repo from a project with a reviewer. I patched "Maintainer alive" to fail a repo that is under 30 days old, has under 5 stars, and has only owner commits; the re-scan rejected those four and accepted dapr-agents #912 instead. Later, grading my own pick (pytorch#74602) showed a gap I had not patched: the rubric had no check for "already fixed on the default branch".
 
-**Unit 6: Voice guard files and a repo-memory file, but the hook is not installed**
+**Unit 6: Voice guard, repo-memory file, and a hook that went in late**
 
-I folded my pr-precheck voice guide (the newest copy) into one guide at `~/.claude/voice-guard/voice-guide.md`, symlinked the three skills to it, and wrote the Upstream rules (claims, questions, pings) from my existing rules. I also copied the real-repo scopes into repro-check and plan-check, patched the scout rubric with the staff `scope-feasible` row plus one clause of my own (fail if the default branch already has the behaviour), and wrote `CLAUDE.local.md` for swarmEval (kept out of the diff with `.git/info/exclude`). What broke: Claude Code's permission system denied the step that merges the hook into `~/.claude/settings.json` ("Self-Modification"), so the hook is not installed and I have not run the `gh issue comment --help` wiring test. I ran the guard by hand instead (`check_voice.py --draft`), and it passed my claim comment and my PR description (both are in `guard-log.md`). I did not re-run the unit 1 harness against the gold labels after the rubric patch, so I do not know that the patch kept agreement.
+I folded my pr-precheck voice guide (the newest copy) into one guide at `~/.claude/voice-guard/voice-guide.md`, symlinked the three skills to it, and wrote the Upstream rules (claims, questions, pings) from my existing rules. I also copied the real-repo scopes into repro-check and plan-check, patched the scout rubric with the staff `scope-feasible` row plus one clause of my own (fail if the default branch already has the behaviour), and wrote `CLAUDE.local.md` for swarmEval (kept out of the diff with `.git/info/exclude`). What broke: Claude Code's permission system denied the step that merges the hook into `~/.claude/settings.json` ("Self-Modification") while I was doing the work, so for the whole contribution I ran the guard by hand (`check_voice.py --draft`), and it passed my claim comment and my PR description (both are in `guard-log.md`). After the story was first pushed I asked for the install directly and the hook went in (with a backup of settings.json). The wiring test `claude "run this command: gh issue comment --help"` was stopped, as expected; the output did not show which hook stopped it, and I assume it was the voice guard. The hook therefore did not check anything I posted. I also did not re-run the unit 1 harness against the gold labels after the rubric patch, so I do not know that the patch kept agreement.
 
 **Unit 7: Ship-gate run by hand on the real branch**
 
-I copied the ship-gate's files, swapped pr-precheck's scope for the real-repo scope (keeping `scope.md.sandbox`), and wrote `ship-manifest.md` for amrevr/swarmEval: install the dev dependencies, run `.venv/bin/pytest -q`, and one excluded row for lint (the repo configures none; ruff is only proposed in open PR #9). As with the voice guard, the hook merge was denied, so the gate did not run through `gh pr create`; I ran `check_gate.py --branch` by hand. It passed both repo checks (6s and 4s) and pr-precheck's four required checks, and its log has the fingerprints. It also pointed out two things I had to check myself, the fork and parallel PRs (I checked: the branch is on my fork, and no open PR touches `demo`). It suggested dropping a first line that repeated the title, which I did for the posted body.
+I copied the ship-gate's files, swapped pr-precheck's scope for the real-repo scope (keeping `scope.md.sandbox`), and wrote `ship-manifest.md` for amrevr/swarmEval: install the dev dependencies, run `.venv/bin/pytest -q`, and one excluded row for lint (the repo configures none; ruff is only proposed in open PR #9). As with the voice guard, the hook merge was denied at first, so the gate did not run through `gh pr create` for this PR; I ran `check_gate.py --branch` by hand. It passed both repo checks (6s and 4s) and pr-precheck's four required checks, and its log has the fingerprints. It also pointed out two things I had to check myself, the fork and parallel PRs (I checked: the branch is on my fork, and no open PR touches `demo`). It suggested dropping a first line that repeated the title, which I did for the posted body. I installed the hook afterward with the install script (it saved a settings backup and left the voice guard's entry alone); `claude "run this command: gh pr create --help"` was stopped by the ship-gate, which says a `gh pr create` without `--title` and `--body-file` is stopped, so that wiring test passed. It came after the PR was open, so the hook did not gate PR #30.
 
 **Unit 8: PR-monitor and a playbook written from a very small sample**
 
@@ -156,7 +156,7 @@ I re-ran the reproduction against the built change, and ran the repo's own suite
 
 - Tool: the ship-gate with my manifest, run by hand (`check_gate.py --branch`), which runs the repo checks and then pr-precheck.
 - What it produced: "PASS", with the install and the test suite both ok, and pr-precheck's four required checks all pass (log in `~/.claude/ship-gate/gate-log.md`).
-- Difficulties: the hook was not installed, so the gate was a manual run rather than a stop before `gh pr create`.
+- Difficulties: the hook was not installed at the time, so the gate was a manual run rather than a stop before `gh pr create`.
 - What changed: I excluded the lint row with a dated reason instead of inventing a check.
 
 ---
@@ -183,8 +183,8 @@ Wrote `plan.md`, `test_evidence.md`, `pr_draft.md` and `ship-manifest.md`, kept 
 
 - Tool: my toolkit as a whole (scout, voice guard by hand, ship-gate by hand, PR-monitor), with the repo-memory file carrying the repo's details between steps.
 - What it produced: the artifacts named in the sections above.
-- Difficulties: the two hooks are not installed (the permission system denied the settings edit), so they never fired on their own.
-- What changed: I ran each guard by hand and recorded in each Toolkit entry that I did.
+- Difficulties: the two hooks were not installed while I worked (the permission system denied the settings edit), so they never fired on their own. I installed them afterward at my request.
+- What changed: I ran each guard by hand and recorded in each Toolkit entry that I did, then installed both hooks after the PR was open.
 
 ---
 
@@ -218,7 +218,7 @@ I traced a CLI code path (`cmd_demo`, `_check_html_run`, `_write_html`) and lear
 
 **Challenges Overcome**
 
-My first pick was already fixed upstream, and I only found out because I read the code before building. The permission system blocked the fork, the install and the hook edits, which cost time; I ran the first two myself and left the hook merge undone rather than working around it. Picking a replacement showed the scout's single-author weakness again, which is the main thing I would still patch.
+My first pick was already fixed upstream, and I only found out because I read the code before building. The permission system blocked the fork, the install and the hook edits, which cost time; I ran the first two myself and did not work around the hook block; the hooks went in later when I asked for them directly. Picking a replacement showed the scout's single-author weakness again, which is the main thing I would still patch.
 
 **What I'd Do Differently Next Time**
 
